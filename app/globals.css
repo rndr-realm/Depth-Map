@@ -1,26 +1,828 @@
 @import "tailwindcss";
 
+/* ----------------------------------------------------------------------------
+ * react-depth-parallax — site theme. Dark showcase: near-black canvas, light
+ * text, Instrument Serif display, a single warm accent borrowed from the
+ * sunset scene. Restrained palette so the parallax cards are the loudest
+ * thing on the page.
+ * ------------------------------------------------------------------------- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light theme — Radix gray on white, mirroring calligraph.raphaelsalaja.com */
+  --bg: #ffffff;
+  --bg-soft: #f4f4f5; /* ~gray-2/3 — subtle surface */
+  --fg: #111111; /* primary text — near-black, à la benji.org */
+  --muted: #646464; /* ~60% black — secondary text */
+  --faint: #999999; /* ~40% black — least-emphasis text */
+  --line: rgba(0, 0, 0, 0.09); /* ~gray-a4 hairline */
+  --line-strong: rgba(0, 0, 0, 0.15); /* ~gray-a6 */
+  --accent: oklch(0.53 0.21 293); /* UI violet — interactive hover/focus accent */
+  --accent-soft: oklch(0.53 0.21 293 / 0.2);
+  /* Subtle container surface — a step above the white bg (~gray-3). */
+  --panel: #efeff0;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--bg-soft);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    /* Kill the elastic overscroll bounce — it drags the fixed parallax canvas
+     * past the hero on scroll at the top (the overshoot). */
+    overscroll-behavior-y: none;
+  }
+  body {
+    /* Faint cool wash up top, fading to white — sits BEHIND the parallax
+     * canvas (z-index:-1), so cards still read against it. */
+    background:
+      radial-gradient(120% 80% at 50% -10%, #f6f6f7 0%, var(--bg) 46%),
+      var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 460;
+    text-wrap: pretty;
+    /* gentle negative tracking, à la benji.org (was an over-tight -0.46px) */
+    letter-spacing: -0.09px;
+  }
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--fg);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Layout container — single 592px editorial column, centered, with phone-edge
+ * padding. Every top-level section uses this so the whole page shares one
+ * measure. */
+.wrap {
+  width: 100%;
+  max-width: 592px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+/* Section label ------------------------------------------------------------*/
+.section-title {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  color: var(--fg);
+}
+
+/* Segmented control --------------------------------------------------------*/
+.seg {
+  position: relative;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.03);
+  /* recessed groove so the active pill reads as raised out of it */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+/* The active indicator — slides between options instead of jumping. Position
+ * and width are set inline from the active button's box. */
+.seg-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 999px;
+  background: #000000;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.25),
+    0 0 0 0.5px rgba(0, 0, 0, 0.5);
+  /* on-screen movement → strong ease-in-out (iOS-like) */
+  transition:
+    transform 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    width 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* no slide on first paint, and none for reduced-motion */
+.seg-pill[data-init="true"] {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .seg-pill {
+    transition: none;
+  }
+}
+.seg-btn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 0.15s ease,
+    scale 0.12s cubic-bezier(0.2, 0, 0, 1);
+}
+/* Extend the hit area to 40px tall (visual stays 32px) — vertical only so
+ * adjacent buttons' hit areas don't overlap across the 2px gap. */
+.seg-btn::before {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .seg-btn:hover {
+    color: var(--fg);
+  }
+  /* keep the active pill's text light on hover (it sits on black) */
+  .seg-btn.seg-active:hover {
+    color: var(--bg);
+  }
+}
+.seg-btn:active {
+  scale: 0.96;
+}
+.seg-active {
+  color: var(--bg);
+}
+
+/* Toggle switch ------------------------------------------------------------*/
+.toggle {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.2s ease,
+    scale 0.12s cubic-bezier(0.2, 0, 0, 1);
+}
+.toggle-on {
+  background: var(--fg);
+}
+.toggle:active {
+  scale: 0.96;
+}
+/* extend the hit area to 40×40 (visual stays 40×24) */
+.toggle::before {
+  content: "";
+  position: absolute;
+  inset: -8px 0;
+}
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.25),
+    0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  /* on-screen movement → strong ease-in-out (iOS-like) */
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.toggle-on .toggle-thumb {
+  transform: translateX(16px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .toggle-thumb {
+    transition: none;
+  }
+}
+
+/* Range slider — fg fill recessed into a groove, with a raised white knob;
+ * shares the "recessed groove + raised white element" language of the
+ * segmented control and toggle so the three controls read as one family. */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  /* dark-grey fill up to --fill, recessed groove after */
+  background: linear-gradient(
+    to right,
+    oklch(0.35 0 0) 0 var(--fill, 0%),
+    rgba(0, 0, 0, 0.08) var(--fill, 0%) 100%
+  );
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+.slider:focus-visible {
+  outline: none;
+}
+
+/* raised white knob (both engines share these values) */
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 0 0 0.5px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition:
+    transform 0.14s cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 0.14s ease;
+}
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 0 0 0.5px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition:
+    transform 0.14s cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 0.14s ease;
+}
+
+/* grab: lift higher + grow (release is snappy) */
+.slider:active::-webkit-slider-thumb {
+  transform: scale(1.1);
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.35),
+    0 0 0 0.5px rgba(0, 0, 0, 0.16);
+}
+.slider:active::-moz-range-thumb {
+  transform: scale(1.1);
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.35),
+    0 0 0 0.5px rgba(0, 0, 0, 0.16);
+}
+
+/* hover only on real pointers */
+@media (hover: hover) and (pointer: fine) {
+  .slider:hover::-webkit-slider-thumb {
+    transform: scale(1.1);
+  }
+  .slider:hover::-moz-range-thumb {
+    transform: scale(1.1);
+  }
+}
+
+/* keyboard focus ring */
+.slider:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 0 0 3px var(--accent-soft);
+}
+.slider:focus-visible::-moz-range-thumb {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 0 0 3px var(--accent-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slider::-webkit-slider-thumb,
+  .slider::-moz-range-thumb {
+    transition: none;
+  }
+}
+.control-label {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--faint);
+}
+
+/* Editable value field — a recessed well (matching the slider/segmented
+ * grooves) that brightens to white with an accent ring on focus. */
+.num-input {
+  width: 40px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.04);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  -webkit-tap-highlight-color: transparent;
+  -moz-appearance: textfield;
+  appearance: textfield;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.num-input:focus {
+  outline: none;
+  background: var(--bg);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 0 0 2px var(--accent-soft);
+}
+.num-input::-webkit-outer-spin-button,
+.num-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Social icon button -------------------------------------------------------*/
+.social {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    scale 0.12s cubic-bezier(0.2, 0, 0, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .social:hover {
+    color: var(--fg);
+    border-color: var(--line-strong);
+    background: rgba(0, 0, 0, 0.03);
+  }
+}
+.social:active {
+  scale: 0.96;
+}
+
+/* Display type — Geist, tightened for headings -----------------------------*/
+.display {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-weight: 560;
+  letter-spacing: -0.008em;
+  text-wrap: balance;
+}
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 500;
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scroll reveal — interruptible transition, gated for reduced motion --------*/
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.7s cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform, opacity;
+}
+[data-reveal][data-shown="true"] {
+  opacity: 1;
+  transform: none;
+  /* release the compositor hint once the one-shot reveal has finished */
+  will-change: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Parallax card frame — the DepthCard image is painted by the shared canvas
+ * behind this transparent box, so we only add an edge outline + lift shadow.
+ * (border-radius can't clip the canvas, so cards stay crisp rectangles.) */
+.depth-frame {
+  position: relative;
+  background: transparent;
+  outline: 1px solid var(--line);
+  outline-offset: -1px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 24px 48px rgba(0, 0, 0, 0.1);
+}
+/* faint top sheen so the rectangle reads as a lit surface */
+.depth-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Subtle surface panel behind the hero image — a generous rounded container
+ * that reads as a distinct surface against the page bg. Content is centered
+ * inside roomy padding; the frame's lift shadow spills past it. */
+/* Hero container — a subtle rounded surface holding the demo. iOS-style
+ * continuous corners via corner-shape (degrades to a circular 16px radius
+ * where unsupported). A plain DOM box, so the radius clips cleanly. */
+.image-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  corner-shape: superellipse(2);
+  background: var(--panel);
+  padding: 24px;
+}
+
+/* Showcase container for the hero DepthCard. The WebGL canvas can't be
+ * border-radius clipped, so ::after paints the page bg back into the four
+ * squircle corners to round it. */
+.effect-panel {
+  position: relative;
+  border-radius: 16px;
+  corner-shape: superellipse(2);
+  overflow: hidden;
+  /* subtle inset hairline so the image reads as a framed surface on white */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+.effect-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%3E%3Cpath%20d='M0%200%20L0%2016%20L0.62%206.10%20L2.55%202.55%20L6.10%200.62%20L16%200%20Z'%20fill='%23ffffff'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%3E%3Cpath%20d='M16%200%20L16%2016%20L15.38%206.10%20L13.45%202.55%20L9.90%200.62%20L0%200%20Z'%20fill='%23ffffff'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%3E%3Cpath%20d='M0%2016%20L0%200%20L0.62%209.90%20L2.55%2013.45%20L6.10%2015.38%20L16%2016%20Z'%20fill='%23ffffff'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%3E%3Cpath%20d='M16%2016%20L16%200%20L15.38%209.90%20L13.45%2013.45%20L9.90%2015.38%20L0%2016%20Z'%20fill='%23ffffff'/%3E%3C/svg%3E");
+  background-position: top left, top right, bottom left, bottom right;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+}
+
+/* Footnotes — tiny counter markers hanging in the left margin (à la benji.org) */
+.footnotes {
+  list-style: none;
+  counter-reset: fn;
+  padding-left: 1.1rem;
+  font-weight: 460;
+}
+.footnotes > li {
+  position: relative;
+  counter-increment: fn;
+}
+.footnotes > li::before {
+  content: counter(fn);
+  position: absolute;
+  right: 100%;
+  top: 0.2em;
+  margin-right: 0.5rem;
+  font-size: 0.62em;
+  font-variant-numeric: tabular-nums;
+  color: var(--faint);
+}
+
+/* Inline code chip — the fill is painted by ::before with em-based vertical
+ * bleed (à la benji.org), so it scales with the text and never disturbs the
+ * line-height. Translucent fill so it can sit over the glyphs harmlessly. */
+.note-code {
+  position: relative;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.92em;
+  color: var(--muted);
+  padding: 0 0.3em;
+  white-space: nowrap;
+}
+.note-code::before {
+  content: "";
+  position: absolute;
+  inset: -0.12em 0;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  pointer-events: none;
+}
+
+/* Hairline divider */
+.rule {
+  height: 1px;
+  background: var(--line);
+  border: 0;
+}
+
+/* Links in prose */
+.link {
+  color: var(--fg);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line-strong);
+  transition: border-color 0.2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    border-bottom-color: var(--accent);
+  }
+}
+
+/* Header "…" overflow menu ---------------------------------------------------*/
+.menu {
+  position: relative;
+  display: inline-flex;
+}
+.menu-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    scale 0.12s cubic-bezier(0.2, 0, 0, 1);
+}
+/* extend the hit area to 40×40 (visual stays 28×28) */
+.menu-trigger::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+.menu-trigger:active {
+  scale: 0.96;
+}
+/* active/open state — highlighted while the menu is open */
+.menu-trigger.is-open {
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--fg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .menu-trigger:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--fg);
+  }
+}
+.menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  min-width: 180px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.14),
+    0 0 0 1px rgba(0, 0, 0, 0.07);
+  transform-origin: top right;
+  /* closed → open handled by interruptible transitions (enter + exit) */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.96);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s cubic-bezier(0.2, 0, 0, 1),
+    visibility 0.16s;
+}
+.menu-panel[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: scale(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-panel,
+  .menu-panel[data-open="true"] {
+    transform: none;
+    transition-property: opacity, visibility;
+  }
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .menu-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+}
+.menu-sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--line);
+}
+
+/* Avatar hover card — reveals a portrait above a name on hover --------------*/
+.avatar-hover {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+.avatar-card {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  z-index: 20;
+  margin-bottom: 10px;
+  transform: translateX(-50%) translateY(4px) scale(0.92);
+  transform-origin: bottom center;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+.avatar-card img {
+  display: block;
+  width: 92px;
+  height: 92px;
+  border: 2px solid #ffffff;
+  border-radius: 14px;
+  object-fit: cover;
+  /* outer hairline + lift shadow define the white frame's edge so it reads
+   * against the white page (a bare white border would be invisible) */
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.24),
+    0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+@media (hover: hover) and (pointer: fine) {
+  .avatar-hover:hover .avatar-card {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .avatar-card {
+    transform: translateX(-50%);
+    transition: opacity 0.15s ease;
+  }
+  .avatar-hover:hover .avatar-card {
+    transform: translateX(-50%);
+  }
+}
+
+/* Buttons -------------------------------------------------------------------*/
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition:
+    scale 0.12s cubic-bezier(0.2, 0, 0, 1),
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.btn:active {
+  scale: 0.96;
+}
+.btn-primary {
+  background: var(--fg);
+  color: var(--bg);
+  border: 1px solid var(--fg);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--line-strong);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    background: #000000;
+  }
+  .btn-ghost:hover {
+    border-color: rgba(0, 0, 0, 0.22);
+    background: rgba(0, 0, 0, 0.03);
+  }
+}
+
+/* Copy button — 40x40 hit area, icon cross-fade lives in CopyButton.tsx */
+.copy-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 10px;
+  color: var(--muted);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    scale 0.12s cubic-bezier(0.2, 0, 0, 1),
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .copy-btn:hover {
+    color: var(--fg);
+    background: rgba(0, 0, 0, 0.05);
+    border-color: var(--line);
+  }
+}
+.copy-btn:active {
+  scale: 0.96;
+}
+.copy-icons {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+/* Docked Leva panel ---------------------------------------------------------*/
+.leva-dock {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.02);
+  padding: 6px 4px;
+  overflow: hidden;
+}
+.leva-dock :is(input, [class*="leva"]) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Code surface --------------------------------------------------------------*/
+.code-block {
+  border-radius: 10px;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.015), rgba(0, 0, 0, 0.015)),
+    var(--bg-soft);
+  overflow: hidden;
+}
+.code-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px 6px 16px;
+}
+.code-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  color: var(--faint);
+}
+.code-pre {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+}
+.code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: -0.46px;
+  color: var(--fg);
+  opacity: 0.75;
+}
+/* single uniform colour — no syntax highlighting */
+.code .c,
+.code .k,
+.code .s,
+.code .t,
+.code .p {
+  color: inherit;
 }
