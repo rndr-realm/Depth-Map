@@ -14,11 +14,12 @@
     "leva": "^0.10.1",
     "next": "16.2.7",
     "react": "19.2.4",
-    "react-depth-parallax": "^1.0.7",
+    "react-depth-parallax": "^1.0.8",
     "react-dom": "19.2.4",
     "web-haptics": "^0.0.6"
   },
   "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -55,7 +55,10 @@
     font-size: 14px;
     line-height: 20px;
     font-weight: 460;
-    text-wrap: pretty;
+    /* greedy wrap so paragraphs fill the measure to the right edge (à la
+     * benji.org). text-wrap: pretty shortened lines to avoid orphans, which
+     * left ragged right whitespace in the notes + acknowledgements. */
+    text-wrap: wrap;
     /* gentle negative tracking, à la benji.org (was an over-tight -0.46px) */
     letter-spacing: -0.09px;
   }
@@ -487,19 +490,24 @@
 .footnotes {
   list-style: none;
   counter-reset: fn;
-  padding-left: 1.1rem;
   font-weight: 460;
+  /* greedy wrap (fill each line to the right edge) instead of the body's
+   * inherited text-wrap: pretty, which shortens lines to avoid orphans and
+   * leaves ragged right whitespace — benji.org's notes fill the measure */
+  text-wrap: normal;
 }
+/* hanging indent: marker sits at the column edge (aligned with the heading),
+ * text indents past it — like benji.org's footnotes */
 .footnotes > li {
   position: relative;
   counter-increment: fn;
+  padding-left: 1.1em;
 }
 .footnotes > li::before {
   content: counter(fn);
   position: absolute;
-  right: 100%;
-  top: 0.2em;
-  margin-right: 0.5rem;
+  left: 0;
+  top: 0.15em;
   font-size: 0.62em;
   font-variant-numeric: tabular-nums;
   color: var(--faint);

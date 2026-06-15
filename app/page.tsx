@@ -4,14 +4,13 @@ import { ParallaxProvider } from "react-depth-parallax";
 import { HeroDemo } from "@/components/HeroDemo";
 import { Playground } from "@/components/Playground";
 import { CodeBlock } from "@/components/CodeBlock";
-import { CopyButton } from "@/components/CopyButton";
+import { InstallBlock } from "@/components/InstallBlock";
 import { HeaderMenu } from "@/components/HeaderMenu";
 import { Reveal } from "@/components/Reveal";
 
 const NPM = "https://www.npmjs.com/package/react-depth-parallax";
-const VERSION = "1.0.7";
+const VERSION = "1.0.8";
 
-const INSTALL = "npm install react-depth-parallax";
 const USAGE = `import { ParallaxProvider, DepthCard } from "react-depth-parallax";
 
 export default function App() {
@@ -28,7 +27,7 @@ export default function Page() {
       <div className="mx-auto w-full max-w-[592px] px-6 pb-24">
         {/* hero */}
         <Reveal>
-          <header className="pt-[140px]">
+          <header className="pt-20 sm:pt-[140px]">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-baseline gap-2.5">
                 <h1 className="display text-[18px] leading-tight">
@@ -78,12 +77,7 @@ export default function Page() {
 
         {/* installation */}
         <Section title="Installation">
-          <div className="flex items-center gap-1 rounded-2xl bg-bg-soft/50 py-1.5 pr-1.5 pl-4">
-            <code className="code flex-1 truncate text-[12px] text-muted">
-              $ {INSTALL}
-            </code>
-            <CopyButton text={INSTALL} label="Copy install command" />
-          </div>
+          <InstallBlock />
         </Section>
 
         {/* usage */}
@@ -118,11 +112,14 @@ export default function Page() {
 
             <ol className="footnotes mt-8 flex flex-col gap-3.5 text-[12px] leading-snug tracking-normal text-faint">
               <li>
-                The parallax is drawn on a single, viewport-pinned WebGL canvas
-                (<code className="note-code">position: fixed</code>), so it can&apos;t
-                be clipped to a rounded container. The hero image is cropped to its
-                container&apos;s aspect and fills it edge-to-edge rather than
-                overflowing and being masked.
+                Each card draws the parallax to its own WebGL canvas, clipped to
+                the rounded frame, and only repaints while the pointer is moving —
+                so it sits idle, and stays smooth, while you scroll.
+              </li>
+              <li>
+                On phones the parallax is driven by the device gyroscope — tilt the
+                screen instead of moving a cursor. Native gyro support is in the works
+                for the library itself.
               </li>
               <li>
                 The depth map is grayscale — brighter pixels read as nearer and shift
