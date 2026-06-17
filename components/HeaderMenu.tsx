@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { playClick } from "./sounds";
 
 const GITHUB = "https://github.com/rndr-realm/react-depth-parallax";
@@ -17,27 +17,28 @@ const CLAUDE = "https://claude.ai/new?q=" + encodeURIComponent(AI_QUERY);
 export function HeaderMenu() {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const panelCallbackRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      const first = node.querySelector<HTMLElement>('[role="menuitem"]');
+      first?.focus();
+    }
+  }, []);
+
+  function onPanelBlur(e: React.FocusEvent) {
+    const panel = e.currentTarget;
+    if (!panel.contains(e.relatedTarget) && e.relatedTarget !== triggerRef.current) {
+      setOpen(false);
+    }
+  }
+
+  function onPanelKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") {
+      setOpen(false);
+      triggerRef.current?.focus();
+    }
+  }
 
   async function copyInstall() {
     playClick();
@@ -51,7 +52,7 @@ export function HeaderMenu() {
   }
 
   return (
-    <div className="menu" ref={ref}>
+    <div className="menu">
       <button
         ref={triggerRef}
         type="button"
@@ -68,7 +69,15 @@ export function HeaderMenu() {
         </svg>
       </button>
 
-      <div className="menu-panel" role="menu" data-open={open} aria-hidden={!open}>
+      <div
+        ref={open ? panelCallbackRef : undefined}
+        className="menu-panel"
+        role="menu"
+        data-open={open}
+        aria-hidden={!open}
+        onBlur={onPanelBlur}
+        onKeyDown={onPanelKeyDown}
+      >
         <MenuLink href={GITHUB} onSelect={() => setOpen(false)}>
           GitHub
         </MenuLink>

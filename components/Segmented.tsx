@@ -50,7 +50,7 @@ export function Segmented<T extends string>({
   }, [measure]);
 
   return (
-    <div className="seg">
+    <div className="seg" role="radiogroup">
       {pill && (
         <span
           className="seg-pill"
@@ -69,10 +69,26 @@ export function Segmented<T extends string>({
             btnRefs.current[i] = el;
           }}
           type="button"
+          role="radio"
+          aria-checked={o.value === value}
           onClick={() => {
             if (o.value === value) return;
             onChange(o.value);
           }}
+          onKeyDown={(e) => {
+            let next = -1;
+            if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+              next = (i + 1) % options.length;
+            } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+              next = (i - 1 + options.length) % options.length;
+            }
+            if (next !== -1) {
+              e.preventDefault();
+              onChange(options[next].value);
+              btnRefs.current[next]?.focus();
+            }
+          }}
+          tabIndex={o.value === value ? 0 : -1}
           className={`seg-btn ${value === o.value ? "seg-active" : ""}`}
         >
           {o.label}
