@@ -7,10 +7,9 @@ import { AgentationWidget } from "@/components/AgentationWidget";
 const geistSans = Geist({ variable: "--font-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] });
 
-const TITLE = "React Depth Parallax — WebGL Depth-Map Parallax for React";
+const TITLE = "React Depth Parallax";
 const SHORT_TITLE = "React Depth Parallax";
-const DESCRIPTION =
-  "A lightweight React component that renders real-time WebGL depth-map parallax effects. Drop in an image and its depth map to get smooth, GPU-accelerated 3D parallax driven by the cursor or device gyroscope.";
+const DESCRIPTION = "WebGl Depth map parallax for React";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://depth.rndrealm.com/"),
