@@ -24,7 +24,10 @@ export default function App() {
 export default function Page() {
   return (
     <ParallaxProvider>
-      <div className="mx-auto w-full max-w-[592px] px-6 pb-24">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
+      <main id="main-content" className="mx-auto w-full max-w-[592px] px-6 pb-24">
         {/* hero */}
         <Reveal>
           <header className="pt-20 sm:pt-[140px]">
@@ -37,6 +40,7 @@ export default function Page() {
                   href={NPM}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={`Version ${VERSION} on npm (opens in a new tab)`}
                   className="tnum -my-2 py-2 text-[13px] text-muted transition-[color,scale] duration-150 hover:text-fg active:scale-[0.96]"
                 >
                   v{VERSION}
@@ -141,7 +145,7 @@ export default function Page() {
             </ol>
           </footer>
         </Reveal>
-      </div>
+      </main>
     </ParallaxProvider>
   );
 }
@@ -183,6 +187,7 @@ function ExtLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className="link">
       {children}
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   );
 }

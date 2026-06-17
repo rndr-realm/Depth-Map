@@ -7,30 +7,53 @@ import { AgentationWidget } from "@/components/AgentationWidget";
 const geistSans = Geist({ variable: "--font-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] });
 
-const TITLE = "react-depth-parallax — depth that follows your cursor";
-const DESCRIPTION = "WebGL depth-map parallax for React.";
+const TITLE = "React Depth Parallax";
+const SHORT_TITLE = "React Depth Parallax";
+const DESCRIPTION = "WebGl Depth map parallax for React";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://depth-demo-indol.vercel.app"),
+  metadataBase: new URL("https://depth.rndrealm.com/"),
   title: TITLE,
   description: DESCRIPTION,
   openGraph: {
     type: "website",
-    url: "https://depth-demo-indol.vercel.app",
+    url: "https://depth.rndrealm.com/",
     title: TITLE,
     description: DESCRIPTION,
     // Animated GIF — auto-loops on Discord/Slack/Telegram. (No og:video, since
     // that makes Discord show a click-to-play player instead of the live GIF.)
     images: [
-      { url: "/og.gif", width: 1200, height: 630, type: "image/gif", alt: TITLE },
+      {
+        url: "/og.gif",
+        width: 1200,
+        height: 630,
+        type: "image/gif",
+        alt: "Animated demo of a depth-map parallax effect — a photo shifts in 3D as the cursor moves, driven by a grayscale depth map",
+      },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: TITLE,
+    title: SHORT_TITLE,
     description: DESCRIPTION,
-    // static PNG — most reliable still on X
     images: ["/og.png"],
+  },
+  alternates: { canonical: "https://depth.rndrealm.com/" },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "react-depth-parallax",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Any",
+  url: "https://depth.rndrealm.com/",
+  description: DESCRIPTION,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  author: {
+    "@type": "Organization",
+    name: "Rndr Realm",
+    url: "https://x.com/rndr_realm",
   },
 };
 
@@ -43,6 +66,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+          }}
+        />
         {children}
         {process.env.NODE_ENV === "development" && <AgentationWidget />}
       </body>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useId, useState, type CSSProperties } from "react";
 import { DepthCard } from "react-depth-parallax";
 import { Toggle } from "./Toggle";
 import { CodeBlock } from "./CodeBlock";
@@ -83,8 +83,10 @@ function Slider({
   step: number;
   onChange: (v: number) => void;
 }) {
-  // Local text state so partial input ("1.") survives mid-typing; the slider
-  // writes back through it too, keeping field and track in sync.
+  const id = useId();
+  const numberId = `${id}-num`;
+  const rangerId = `${id}-range`;
+
   const [text, setText] = useState(value.toFixed(1));
   const pct = ((value - min) / (max - min)) * 100;
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
@@ -92,8 +94,10 @@ function Slider({
   return (
     <div>
       <div className="mb-2.5 flex items-center justify-between">
-        <label className="control-label">{label}</label>
+        <label htmlFor={rangerId} className="control-label">{label}</label>
         <input
+          id={numberId}
+          aria-label={`${label} value`}
           className="num-input"
           type="number"
           inputMode="decimal"
@@ -110,6 +114,7 @@ function Slider({
         />
       </div>
       <input
+        id={rangerId}
         className="slider"
         type="range"
         min={min}
