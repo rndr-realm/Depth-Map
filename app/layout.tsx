@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   openGraph: {
     type: "website",
+    siteName: "React Depth Parallax",
     url: "https://depth.rndrealm.com/",
     title: TITLE,
     description: DESCRIPTION,
