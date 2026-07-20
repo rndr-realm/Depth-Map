@@ -9,7 +9,7 @@ import { HeaderMenu } from "@/components/HeaderMenu";
 import { Reveal } from "@/components/Reveal";
 
 const NPM = "https://www.npmjs.com/package/react-depth-parallax";
-const VERSION = "1.0.8";
+const VERSION = "1.0.10";
 
 const USAGE = `import { ParallaxProvider, DepthCard } from "react-depth-parallax";
 
